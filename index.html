@@ -13,7 +13,7 @@
       <script type="text/javascript">
 		var startUp, restart;
 		(function() {
-			function robot_direction(vel){
+			function robot_direction(vel, angle){
 				if (vel > 1){
 					vel = 1;
 				}
@@ -21,11 +21,17 @@
 				if (vel < -1){
 					vel = -1;
 				}
+				if ( angle != robot.GetAngle() ){
+					robot.SetTransform(robot.GetPosition(), angle);
+				}
 				
 				var move = new Box2D.b2Vec2(-Math.sin(robot.GetAngle()) * vel, Math.cos(robot.GetAngle()) * vel);
 				robot.SetLinearVelocity(move);
+				
+				console.log("pos ["+robot.GetPosition().get_x() + ", "  +robot.GetPosition().get_y() + "] "+ robot.GetAngle());
 			}
 		
+			var storage = {};
 			// Box2D-interfacing code
 			var gravity = new Box2D.b2Vec2(0.0, 0.0);
 			var world = new Box2D.b2World(gravity);
@@ -51,13 +57,15 @@
 			robot.SetActive(1);
 			robot.SetFixedRotation(true);
 			
-			robot_direction(1);
-			
 			// Main demo code
 			var totalTime = 0;
 			var boxes = [];
 			var position = [0,0,0];
 			function simulate(dt) {
+			
+				var codeAI = document.getElementById('robotAIloop');
+				codeAI && eval(codeAI.value);
+			
 				world.Step(dt, 2, 2);
 				
 				// Read box2d data into JS objects
@@ -101,7 +109,7 @@
 			// CubicVR code
 			startUp = function() {
 				var canvas = document.getElementById("canvas");
-				canvas.width = screen.width*0.70;
+				canvas.width = screen.width*0.5;
 				canvas.height = screen.height*0.55;
 				var gl = CubicVR.GLCore.init(canvas);
 				if (!gl) {
@@ -177,8 +185,26 @@
     <body onload="startUp()">
       <center>
         <h2>box2d.js WebGL Demo</h2>
-        <canvas id="canvas" width="600" height="500"></canvas>
+        <canvas id="canvas" width="300" height="600" style="float:left;"></canvas>
         <br><br>
+		<textarea id="robotAIloop" style="width:600px; height:600px;">
+if (!storage['setup']){
+	storage['setup'] = 1;
+	storage['angle'] = 0;
+	console.log("setup");
+	var d = new Date();
+	storage['lastUpdate'] = d.getTime();
+}else{
+	var d = new Date();
+	var timestamp = d.getTime();
+	if ( (timestamp - storage['lastUpdate']) > 1000){
+		console.log("update");
+		storage['lastUpdate'] = timestamp;
+		storage['angle'] += Math.PI/2;
+		robot_direction(1, storage['angle']);
+	}
+}
+        </textarea>
         <div>FPS (current / stable): <input type="text" id="out" readonly="1" size="7"></div>
         <div id="info"></div>
         <p>
