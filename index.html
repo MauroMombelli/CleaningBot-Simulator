@@ -126,6 +126,16 @@ function draw(){
 	ctx.fillStyle = "Red";
 	ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.bodyRadius*scale,0,2*Math.PI);
 	ctx.fill();
+	
+	//draw a line that show the "head" of the bot
+	ctx.beginPath();
+	ctx.strokeStyle = "Blue";
+	ctx.lineWidth=0.1*scale;
+	ctx.moveTo(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY);
+	var hX = (robot.pos.x + Math.sin(robot.angle)*robot.bodyRadius) *scale+offsetY;
+	var hY = (robot.pos.y + Math.cos(robot.angle)*robot.bodyRadius) *scale+offsetY;
+	ctx.lineTo(hX, hY);
+	ctx.stroke();
 	/*
 	//draw the radar
 	ctx.beginPath();
@@ -137,6 +147,7 @@ function draw(){
 		//draw the collision
 		ctx.beginPath();
 		ctx.fillStyle = "Green";
+		ctx.lineWidth="1";
 		ctx.arc(collision.x*scale+offsetX,collision.y*scale+offsetY,2,0,2*Math.PI);
 		ctx.fill();
 	});
@@ -166,12 +177,12 @@ function loop(){
 var cooldown = 0;
 function doAI(){
 	//USER CODE!
-	robot.move.x = Math.sin(robot.angle)*(-0.05);
-	robot.move.y = Math.cos(robot.angle)*(-0.05);
+	robot.move.x = Math.sin(robot.angle)*(0.09);
+	robot.move.y = Math.cos(robot.angle)*(0.09);
 	if (cooldown)
 		cooldown--;
 	if (bodyCollision && cooldown <= 0){
-		cooldown = 10;
+		//cooldown = 10;
 		
 		if (Math.random() >0.5){
 			console.log("collision, rotating left");
