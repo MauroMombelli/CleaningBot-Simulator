@@ -1,219 +1,296 @@
+<!DOCTYPE html>
 <html>
-    <head>
-      <title>Box2D/WebGL Demo</title>
-      <script src="CubicVR.min.js" type="text/javascript"></script>
-      <script>
-        var Module = { TOTAL_MEMORY: 256*1024*1024 };
-      </script>
-      <script src="box2d.js" type="text/javascript"></script>
-      <style type="text/css">
-        body { background-color: #ccc; }
-      </style>
+<body>
 
-      <script type="text/javascript">
-		var startUp, restart;
-		(function() {
-			function robot_direction(vel, angle){
-				if (vel > 1){
-					vel = 1;
-				}
-				
-				if (vel < -1){
-					vel = -1;
-				}
-				if ( angle != robot.GetAngle() ){
-					robot.SetTransform(robot.GetPosition(), angle);
-				}
-				
-				var move = new Box2D.b2Vec2(-Math.sin(robot.GetAngle()) * vel, Math.cos(robot.GetAngle()) * vel);
-				robot.SetLinearVelocity(move);
-				
-				console.log("pos ["+robot.GetPosition().get_x() + ", "  +robot.GetPosition().get_y() + "] "+ robot.GetAngle());
-			}
+<canvas id="myCanvas" width="800" height="400" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+<script>
+
+function Robot(x, y) {
+  this.x = x;
+  this.y = y;
+  this.radius = 1;
+}
+
+function RobotSensor() {
+  this.encoderLeft = 0;
+  this.encoderRight = 0;
+
+  this.bumpLeft = 0;
+  this.bumpRight = 0;
+  
+  this.distanceFw = 0;
+  this.distanceBw = 0;
+  this.distanceLeft = 0;
+  this.distanceRight = 0;
+}
+
+function RobotAction() {
+  this.speed = 0;
+  this.rotation = 0;
+}
+
+//main loop
+function loop() {
+	//set sensor data
+	
+}
+
+function Point(x, y) {
+  this.x = x;
+  this.y = y;
+}
+
+var rooms = [
+  [
+    new Point(0,6),
+    new Point(6,6),
+    new Point(6,9),
+    new Point(4,9),
+    new Point(4,14),
+    new Point(0,14)
+  ],
+  [
+    new Point(4,9),
+    new Point(10,9),
+    new Point(10,14),
+    new Point(4,14)
+  ],
+  [
+    new Point(13,0),
+    new Point(20,0),
+    new Point(20,10),
+    new Point(13,10),
+    new Point(13,14),
+    new Point(10,14),
+    new Point(10,9),
+    new Point(6,9),
+    new Point(6,6),
+    new Point(13,6)
+  ],
+  [
+    new Point(9,0),
+    new Point(13,0),
+    new Point(13,6),
+    new Point(9,6)
+  ],
+  [
+    new Point(0,0),
+    new Point(9,0),
+    new Point(9,6),
+    new Point(0,6)
+  ]
+];
+
+var robot = {pos:new Point(1,1), angle:0, bodyRadius:0.1, radarRadius:0.3};
+
+function draw(){
+	var scale = 20;
+	var offsetX = 10;
+	var offsetY = 10;
+
+	var c = document.getElementById("myCanvas");
+	var ctx = c.getContext("2d");
+
+	//clear the image
+	ctx.clearRect(0, 0, c.width, c.height);
+	
+	//draw the rooms
+	rooms.forEach(function(room, index, array) {
+
+		ctx.beginPath();
+		ctx.lineWidth="1";
+		ctx.strokeStyle="black"; // Wall
+
+		//jump to initial point
+		ctx.moveTo(room[0].x*scale+offsetX, room[0].y*scale+offsetY);
+
+		//draw each point. index 0 could be avoided at the beninginng since we are already there. Hope JS is smart and does not fuck up
+		room.forEach(function(item, index, array) {
+			ctx.lineTo(item.x*scale+offsetX,item.y*scale+offsetY);
+		});
+
+		//close the figure
+		ctx.lineTo(room[0].x*scale+offsetX, room[0].y*scale+offsetY);
+
+		ctx.stroke(); // Draw it
+	});
+
+	//draw the robot
+	ctx.beginPath();
+	ctx.strokeStyle = "Red";
+	ctx.fillStyle = "Red";
+	ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.bodyRadius*scale,0,2*Math.PI);
+	ctx.fill();
+	
+	//draw the radar
+	ctx.beginPath();
+	ctx.strokeStyle = "Red";
+	ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.radarRadius*scale,0,2*Math.PI);
+	ctx.stroke();
+
+}
+
+
+
+
+
+window.setInterval(loop, 500);
+//loop();
+function loop(){
+	console.log("loop");
+	robot.pos.x += 0.1;
+	
+	findCollision(robot)
+	
+	draw();
+
+}
+
+function findCollision(robot){
+	rooms.forEach(function(room, index, array) {
+		console.log("ROOM "+index);
+		var i;
+		for (i = 0; i < room.length-1; i++){
+			p = findTangentPoint(robot.pos.x, robot.pos.y, room[i].x, room[i].y, room[i+1].x, room[i+1].y);
+			//console.log("Tangent point is " +p.x+","+p.y);
+			collide(robot, p);
+		}
+		p = findTangentPoint(robot.pos.x, robot.pos.y, room[i].x, room[i].y, room[0].x, room[0].y);
 		
-			var storage = {};
-			// Box2D-interfacing code
-			var gravity = new Box2D.b2Vec2(0.0, 0.0);
-			var world = new Box2D.b2World(gravity);
+		collide(robot, p);
+	});
+}
 
-			//build ground
-			var bd_ground = new Box2D.b2BodyDef();
-			var ground = world.CreateBody(bd_ground);
-			var shape0 = new Box2D.b2EdgeShape();
-			shape0.Set(new Box2D.b2Vec2(-40.0, -6.0), new Box2D.b2Vec2(40.0, -6.0));
-			ground.CreateFixture(shape0, 0.0);
+function distance(a, b){
+	return Math.sqrt( (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) );
+}
 
-			//build robot shape
-			var circleShape = new Box2D.b2CircleShape();
-			circleShape.set_m_radius( 1 );
-			//build robot physic body
-			var robot_bg = new Box2D.b2BodyDef();
-			robot_bg.set_type(Box2D.b2_dynamicBody);
-			//create object in the world
-			var robot = world.CreateBody(robot_bg);
-			robot.CreateFixture( circleShape, 0.5 );
-			robot.SetTransform(new Box2D.b2Vec2(0, 0), Math.PI+Math.PI/4);
-			robot.SetAwake(1);
-			robot.SetActive(1);
-			robot.SetFixedRotation(true);
-			
-			// Main demo code
-			var totalTime = 0;
-			var boxes = [];
-			var position = [0,0,0];
-			function simulate(dt) {
-			
-				var codeAI = document.getElementById('robotAIloop');
-				codeAI && eval(codeAI.value);
-			
-				world.Step(dt, 2, 2);
-				
-				// Read box2d data into JS objects
-				
-				robotRender.position[0] = robot.GetPosition().get_x();
-				robotRender.position[1] = robot.GetPosition().get_y();
-				
-				//robotRender.position[2] = 0; //3d off
-				robotRender.rotation = [0, 0, robot.GetAngle()*180/Math.PI];
-				/*
-				console.log("robot: "+robotRender.position[0]+" "+robotRender.position[1]);
-				*/
-				totalTime += dt;
-			}
-			var fpsInfo = {
-				dts: 0,
-				num: 0,
-				lastHUD: Date.now(),
-				allNum: 0,
-				all: 0,
-			};
-			var outElement = null;
-			function showFPS(dt) {
-				if (!outElement) outElement = document.getElementById('out');
-				var now = Date.now();
-				fpsInfo.dts += dt;
-				fpsInfo.num++;
-				if (now - fpsInfo.lastHUD > 500) {
-					var curr = 1/(fpsInfo.dts/fpsInfo.num);
-					fpsInfo.allNum++;
-					var alpha = Math.min(1, 2/fpsInfo.allNum);
-					fpsInfo.all = alpha*curr + (1-alpha)*fpsInfo.all;
-					outElement.value = Math.round(curr) + ' / ' + Math.round(fpsInfo.all);
-					fpsInfo.lastHUD = now;
-					fpsInfo.dts = 0;
-					fpsInfo.num = 0;
-				}
-			}
-			var FLOOR_SIZE = 100;
-			var FLOOR_HEIGHT = -56
-			// CubicVR code
-			startUp = function() {
-				var canvas = document.getElementById("canvas");
-				canvas.width = screen.width*0.5;
-				canvas.height = screen.height*0.55;
-				var gl = CubicVR.GLCore.init(canvas);
-				if (!gl) {
-					alert("Sorry, no WebGL support :(");
-					return;
-				};
-				var scene = new CubicVR.Scene(canvas.width, canvas.height, 70);
-				var light = new CubicVR.Light({
-					type:CubicVR.enums.light.type.POINT,
-					position: [0, 0, 5],
-					intensity: 0.9,
-					areaCeiling: 80,
-					areaFloor: FLOOR_HEIGHT,
-					areaAxis: [15, 10],
-					distance: 60,
-					mapRes: 1024
-				});
-				scene.bindLight(light);
-				scene.camera.position = [0, 2.4, 17];
-				scene.camera.target = [0, 2.4, 0];
-				
-				
-				var robotMaterial = new CubicVR.Material({
-					textures: {
-					color: new CubicVR.Texture("cube1.jpg")
-					}
-				});
-				var robotMeshes = new CubicVR.primitives.box({
-					size: 1.0,
-					material: robotMaterial,
-					uvmapper: {
-						projectionMode: CubicVR.enums.uv.projection.CUBIC,
-						scale: [1, 1, 1]
-					}
-				}).calcNormals().triangulateQuads().compile().clean();
-				
-				
-				
-				var floorMaterial = new CubicVR.Material({
-					textures: {
-					color: new CubicVR.Texture("cube3.jpg")
-					}
-				});
-				var floorMesh = new  CubicVR.primitives.box({
-					size: FLOOR_SIZE,
-					material: floorMaterial,
-					uvmapper: {
-						projectionMode: CubicVR.enums.uv.projection.CUBIC,
-						scale: [4, 4, 4]
-					}
-				}).calcNormals().triangulateQuads().compile().clean();
-				
-				
-				var floor_ = new CubicVR.SceneObject({ mesh: floorMesh, position: [0, FLOOR_HEIGHT, 0] });
-				scene.bindSceneObject(floor_, true);
-				
-				robotRender = new CubicVR.SceneObject({ mesh: robotMeshes, position: [0, 0, 0] });
-				scene.bindSceneObject(robotRender, true);
-				
-				
-				//var mvc = new CubicVR.MouseViewController(canvas, scene.camera);
-				CubicVR.MainLoop(function(timer, gl) {
-					var dt = timer.getLastUpdateSeconds();
-					simulate(dt);
-					scene.updateShadows();
-					scene.render();
-					showFPS(dt);
-				});
-			}
-        })();
-      </script>
-    </head>
-    <body onload="startUp()">
-      <center>
-        <h2>box2d.js WebGL Demo</h2>
-        <canvas id="canvas" width="300" height="600" style="float:left;"></canvas>
-        <br><br>
-		<textarea id="robotAIloop" style="width:600px; height:600px;">
-if (!storage['setup']){
-	storage['setup'] = 1;
-	storage['angle'] = 0;
-	console.log("setup");
-	var d = new Date();
-	storage['lastUpdate'] = d.getTime();
-}else{
-	var d = new Date();
-	var timestamp = d.getTime();
-	if ( (timestamp - storage['lastUpdate']) > 1000){
-		console.log("update");
-		storage['lastUpdate'] = timestamp;
-		storage['angle'] += Math.PI/2;
-		robot_direction(1, storage['angle']);
+function collide(robot, point){
+	var rangeBody = 2, rangeRadar = 5;
+	var dist = distance(robot.pos, point);
+	//console.log("distance " +dist);
+	if (dist <= robot.radarRadius ){
+		//i see you
+		console.log("i see something");
+		if (dist <= robot.bodyRadius ){
+			//i touch you
+			console.log("i touch something");
+		}
 	}
 }
-        </textarea>
-        <div>FPS (current / stable): <input type="text" id="out" readonly="1" size="7"></div>
-        <div id="info"></div>
-        <p>
-        This is <b><a href="https://github.com/kripken/box2d.js">box2d.js</a></b>, a port of
-        the <b><a href="http://box2d.org/">Box2D physics engine</a></b> from C++ to JavaScript
-        using <b><a href="http://emscripten.org">Emscripten</a></b>. WebGL rendering in this demo is done using
-        <b><a href="https://github.com/cjcliffe/CubicVR.js/">CubicVR.js</a></b>.
-        </p>
-        <input type="button" onclick="restart()" value="restart">
-      </center>
-    </body>
+
+function constrain(val, min, max){
+	if (min > max){
+		return constrain(val, max, min);
+	}
+
+	if (val < min)
+		return min;
+		
+	if (val > max)
+		return max;
+	
+	return val;
+}
+
+function findTangentPoint(xR, yR, xW1, yW1, xW2, yW2 ){
+	if ( xW1 == xW2 ){
+		//console.log("same x " +yR +" "+ yW1+" "+ yW2);
+		return new Point(xW1, constrain(yR, yW1, yW2) );
+	}
+	
+	if ( yW1 == yW2 ){
+		//console.log("same y " +xR +" "+ xW1+" "+ xW2);
+		return new Point(constrain(xR, xW1, xW2), yW1);
+	}
+
+	mW = (yW1 - yW2) / (-xW1 + xW2);
+	qW = -mW * xW1 + yW1;
+	console.log("Equation of the wall is y=" +mW+"x+"+qW);
+	
+	if ( isFinite(mW) ){
+		mI = 0;
+	}
+
+	//first we find the m and q of the line tangent to the wall passing by the center of the robot
+	var mI = -1/mW;
+	
+	var qI = mI*xR-yR
+	
+	console.log("tangent line " +mI+" "+qI);
+	
+	//now we find the point where the tangent line and the wall line intersect
+	var x = (-qW+qI)/(mW-mI);
+	var y = mW * x + qW;
+	
+	//DEBUG: doublecheck
+	var yDebug = mI * x + qI;
+	if (yDebug != y){
+		console.log("ERROR: tangent point is wrong! " +x+" "+y+" "+yDebug);
+	}
+	return new Point(x,y);
+}
+
+
+function cleanRoom(room){
+  // now we try to be smartass
+  var c = document.getElementById("myCanvas");
+  var ctx = c.getContext("2d");
+
+  //get the first wall and make it into a line
+  //y = mx + q
+  var x1 = room[0].x;
+  var x2 = room[1].x;
+  
+  var y1 = room[0].y;
+  var y2 = room[1].y;
+  
+  console.log("x1 "+x1+" y1 "+y1);
+  console.log("x2 "+x2+" y2 "+y2);
+  
+  var correctionM = 0;
+  var correctionQ = 0;
+  
+  if (x1 != x2){
+	var deltaX = x1-x2; 
+	var deltaY = y1-y2;
+
+	var m = deltaY / deltaX; 
+	
+	correctionM = m;
+  }
+  
+  correctionQ = y1 - x1 * correctionM;
+  
+  console.log("correctionM "+correctionM+" correctionQ "+correctionQ);
+  //need to find higest Y
+  for (var i = 0; i > -6; i--){
+	ctx.beginPath();
+	ctx.lineWidth="4";
+	ctx.strokeStyle="red"; // path
+  
+	var targetX1 = x1;
+	var targetY1 = correctionM * x1 + correctionQ + i;
+	
+	console.log("tx1 "+targetX1+" ty1 "+targetY1);
+	
+	ctx.moveTo(targetX1 * scale+offsetX, targetY1 * scale+offsetY);
+	
+	var targetX2 = x2;
+	var targetY2 = correctionM * x2 + correctionQ + i;
+	
+	console.log("tx2 "+targetX2+" ty2 "+targetY2);
+	
+	ctx.lineTo(targetX2 * scale+offsetX, targetY2 * scale+offsetY);
+
+	ctx.stroke(); // Draw it
+  }
+  
+}
+
+</script>
+
+</body>
 </html>
