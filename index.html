@@ -2,7 +2,7 @@
 <html>
 <body>
 
-<canvas id="myCanvas" width="800" height="400" style="border:1px solid #d3d3d3;">
+<canvas id="myCanvas" width="1024" height="800" style="border:1px solid #d3d3d3;">
 Your browser does not support the HTML5 canvas tag.</canvas>
 
 <script>
@@ -83,10 +83,11 @@ var rooms = [
   ]
 ];
 
-var robot = {pos:new Point(1,1), angle:0, bodyRadius:0.1, radarRadius:0.3};
+var robot = {move:new Point(0,0),rotate:0,pos:new Point(1,1), angle:0, bodyRadius:0.1, radarRadius:0.3};
 
+var collisions = [];
 function draw(){
-	var scale = 20;
+	var scale = 50;
 	var offsetX = 10;
 	var offsetY = 10;
 
@@ -126,31 +127,48 @@ function draw(){
 	
 	//draw the radar
 	ctx.beginPath();
-	ctx.strokeStyle = "Red";
+	ctx.strokeStyle = "Blue";
 	ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.radarRadius*scale,0,2*Math.PI);
 	ctx.stroke();
 
+	collisions.forEach(function(collision, index, array) {
+		//draw the collision
+		ctx.beginPath();
+		ctx.fillStyle = "Green";
+		ctx.arc(collision.x*scale+offsetX,collision.y*scale+offsetY,2,0,2*Math.PI);
+		ctx.fill();
+	});
 }
 
 
 
 
 
-window.setInterval(loop, 500);
+window.setInterval(loop, 1000);
 //loop();
 function loop(){
 	console.log("loop");
-	robot.pos.x += 0.1;
 	
+	robot.pos.x+=robot.move.x;
+	robot.pos.y+=robot.move.y;
+	robot.angle+=robot.rotation;
+	
+	collisions = [];
 	findCollision(robot)
-	
 	draw();
 
+	robot.move.x = robot.move.y = robot.rotation = 0;
+	doAI();
+}
+
+function doAI(){
+	//USER CODE!
+	robot.move.x = -0.1;
 }
 
 function findCollision(robot){
 	rooms.forEach(function(room, index, array) {
-		console.log("ROOM "+index);
+		//console.log("ROOM "+index);
 		var i;
 		for (i = 0; i < room.length-1; i++){
 			p = findTangentPoint(robot.pos.x, robot.pos.y, room[i].x, room[i].y, room[i+1].x, room[i+1].y);
@@ -174,9 +192,27 @@ function collide(robot, point){
 	if (dist <= robot.radarRadius ){
 		//i see you
 		console.log("i see something");
+		collisions.push(point);
 		if (dist <= robot.bodyRadius ){
 			//i touch you
 			console.log("i touch something");
+			collisions.push(point);
+			if (dist < robot.bodyRadius ){
+				//i'm inside the wall! take me out of there!
+				//we just move back the robot
+				robot.pos.x -= robot.move.x;
+				robot.pos.y -= robot.move.y;
+				
+				var distanceMoved = distance( robot.move, new Point(0,0) );
+				var distancePossibleToMove = distanceMoved - (robot.bodyRadius + dist);
+				robot.move.x = (robot.move.x/distanceMoved)*distancePossibleToMove;
+				robot.move.y = (robot.move.y/distanceMoved)*distancePossibleToMove;
+				
+				robot.pos.x += robot.move.x;
+				robot.pos.y += robot.move.y;
+				
+				//now i HOPE it does not collide animore. May NOT be tha case in case of corner; in that case i don't know what to do. sorry
+			}
 		}
 	}
 }
