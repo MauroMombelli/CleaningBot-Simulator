@@ -144,7 +144,7 @@ function draw(){
 
 
 
-window.setInterval(loop, 1000);
+window.setInterval(loop, 100);
 //loop();
 function loop(){
 	console.log("loop");
@@ -205,6 +205,7 @@ function collide(robot, point){
 				
 				var distanceMoved = distance( robot.move, new Point(0,0) );
 				var distancePossibleToMove = distanceMoved - (robot.bodyRadius + dist);
+				distancePossibleToMove = Math.abs(distancePossibleToMove);
 				robot.move.x = (robot.move.x/distanceMoved)*distancePossibleToMove;
 				robot.move.y = (robot.move.y/distanceMoved)*distancePossibleToMove;
 				
