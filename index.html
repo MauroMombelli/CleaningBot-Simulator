@@ -83,7 +83,9 @@ var rooms = [
   ]
 ];
 
-var robot = {move:new Point(0,0),rotate:0,pos:new Point(1,1), angle:0, bodyRadius:0.1, radarRadius:0.3};
+var startAngle = 0 + Math.PI/2 + Math.PI/2 + Math.PI/2 ;
+
+var robot = {move:new Point(0,0),rotation:0,pos:new Point(1,1), angle:startAngle, bodyRadius:0.1, radarRadius:0.3};
 
 var collisions = [];
 function draw(){
@@ -143,8 +145,8 @@ function draw(){
 
 
 
-
-window.setInterval(loop, 100);
+var bodyCollision = false;
+window.setInterval(loop, 10);
 //loop();
 function loop(){
 	console.log("loop");
@@ -163,7 +165,11 @@ function loop(){
 
 function doAI(){
 	//USER CODE!
-	robot.move.x = -0.1;
+	robot.move.x = Math.sin(robot.angle)*(-0.01);
+	robot.move.y = Math.cos(robot.angle)*(-0.01);
+	if (bodyCollision){
+		//robot.rotation = Math.PI/4; //25 deg
+	}
 }
 
 function findCollision(robot){
@@ -186,6 +192,7 @@ function distance(a, b){
 }
 
 function collide(robot, point){
+	bodyCollision = false;
 	var rangeBody = 2, rangeRadar = 5;
 	var dist = distance(robot.pos, point);
 	//console.log("distance " +dist);
@@ -204,14 +211,14 @@ function collide(robot, point){
 				robot.pos.y -= robot.move.y;
 				
 				var distanceMoved = distance( robot.move, new Point(0,0) );
-				var distancePossibleToMove = distanceMoved - (robot.bodyRadius + dist);
+				var distancePossibleToMove = distanceMoved - (robot.bodyRadius - dist);
 				distancePossibleToMove = Math.abs(distancePossibleToMove);
 				robot.move.x = (robot.move.x/distanceMoved)*distancePossibleToMove;
 				robot.move.y = (robot.move.y/distanceMoved)*distancePossibleToMove;
 				
 				robot.pos.x += robot.move.x;
 				robot.pos.y += robot.move.y;
-				
+				bodyCollision = true;
 				//now i HOPE it does not collide animore. May NOT be tha case in case of corner; in that case i don't know what to do. sorry
 			}
 		}
