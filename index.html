@@ -166,12 +166,20 @@ function loop(){
 var cooldown = 0;
 function doAI(){
 	//USER CODE!
-	robot.move.x = Math.sin(robot.angle)*(-0.01);
-	robot.move.y = Math.cos(robot.angle)*(-0.01);
-	if (bodyCollision && cooldown-- < 0){
+	robot.move.x = Math.sin(robot.angle)*(-0.05);
+	robot.move.y = Math.cos(robot.angle)*(-0.05);
+	if (cooldown)
+		cooldown--;
+	if (bodyCollision && cooldown <= 0){
 		cooldown = 10;
-		console.log("collision, rotating");
-		robot.rotation = Math.PI/2; //90 deg
+		
+		if (Math.random() >0.5){
+			console.log("collision, rotating left");
+			robot.rotation = Math.random() * Math.PI; //0..180 deg
+		}else{
+			console.log("collision, rotating right");
+			robot.rotation = -Math.random() * Math.PI; //0..-180 deg
+		}
 	}
 }
 
@@ -214,6 +222,11 @@ function collide(robot, point){
 				robot.pos.x -= robot.move.x;
 				robot.pos.y -= robot.move.y;
 				
+				//ALTERNATIVE2 : just dont move
+				robot.move.x = 0;
+				robot.move.y = 0;
+				//ALTERNAIVE1: try to scale back movement vector
+				/*
 				var distanceMoved = distance( robot.move, new Point(0,0) );
 				var distancePossibleToMove = distanceMoved - (robot.bodyRadius - dist);
 				distancePossibleToMove = Math.abs(distancePossibleToMove);
@@ -222,7 +235,7 @@ function collide(robot, point){
 				
 				robot.pos.x += robot.move.x;
 				robot.pos.y += robot.move.y;
-				
+				*/
 				//now i HOPE it does not collide animore. May NOT be tha case in case of corner; in that case i don't know what to do. sorry
 			}
 		}
