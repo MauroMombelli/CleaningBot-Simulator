@@ -1,368 +1,379 @@
 <!DOCTYPE html>
 <html>
+
 <body>
 
-<canvas id="myCanvas" width="1024" height="800" style="border:1px solid #d3d3d3;">
+    <canvas id="myCanvas" width="1024" height="800" style="border:1px solid #d3d3d3;">
 Your browser does not support the HTML5 canvas tag.</canvas>
 
-<script>
+    <script>
+        function Robot(x, y) {
+            this.x = x;
+            this.y = y;
+            this.radius = 1;
+        }
 
-function Robot(x, y) {
-  this.x = x;
-  this.y = y;
-  this.radius = 1;
-}
+        function RobotSensor() {
+            this.encoderLeft = 0;
+            this.encoderRight = 0;
 
-function RobotSensor() {
-  this.encoderLeft = 0;
-  this.encoderRight = 0;
+            this.bumpLeft = 0;
+            this.bumpRight = 0;
 
-  this.bumpLeft = 0;
-  this.bumpRight = 0;
-  
-  this.distanceFw = 0;
-  this.distanceBw = 0;
-  this.distanceLeft = 0;
-  this.distanceRight = 0;
-}
+            this.distanceFw = 0;
+            this.distanceBw = 0;
+            this.distanceLeft = 0;
+            this.distanceRight = 0;
+        }
 
-function RobotAction() {
-  this.speed = 0;
-  this.rotation = 0;
-}
+        function RobotAction() {
+            this.speed = 0;
+            this.rotation = 0;
+        }
 
-//main loop
-function loop() {
-	//set sensor data
-	
-}
+        //main loop
+        function loop() {
+            //set sensor data
 
-function Point(x, y) {
-  this.x = x;
-  this.y = y;
-}
+        }
 
-var rooms = [
-  [
-    new Point(0,6),
-    new Point(6,6),
-    new Point(6,9),
-    new Point(4,9),
-    new Point(4,14),
-    new Point(0,14)
-  ],
-  [
-    new Point(4,9),
-    new Point(10,9),
-    new Point(10,14),
-    new Point(4,14)
-  ],
-  [
-    new Point(13,0),
-    new Point(20,0),
-    new Point(20,10),
-    new Point(13,10),
-    new Point(13,14),
-    new Point(10,14),
-    new Point(10,9),
-    new Point(6,9),
-    new Point(6,6),
-    new Point(13,6)
-  ],
-  [
-    new Point(9,0),
-    new Point(13,0),
-    new Point(13,6),
-    new Point(9,6)
-  ],
-  [
-    new Point(0,0),
-    new Point(9,0),
-    new Point(9,6),
-    new Point(0,6)
-  ]
-];
+        function Point(x, y) {
+            this.x = x;
+            this.y = y;
+        }
 
-var startAngle = 0 + Math.PI/4 ;
+        var rooms = [
+            [
+                new Point(0, 6),
+                new Point(6, 6),
+                new Point(6, 9),
+                new Point(4, 9),
+                new Point(4, 14),
+                new Point(0, 14)
+            ],
+            [
+                new Point(4, 9),
+                new Point(10, 9),
+                new Point(10, 14),
+                new Point(4, 14)
+            ],
+            [
+                new Point(13, 0),
+                new Point(20, 0),
+                new Point(20, 10),
+                new Point(13, 10),
+                new Point(13, 14),
+                new Point(10, 14),
+                new Point(10, 9),
+                new Point(6, 9),
+                new Point(6, 6),
+                new Point(13, 6)
+            ],
+            [
+                new Point(9, 0),
+                new Point(13, 0),
+                new Point(13, 6),
+                new Point(9, 6)
+            ],
+            [
+                new Point(0, 0),
+                new Point(9, 0),
+                new Point(9, 6),
+                new Point(0, 6)
+            ]
+        ];
 
-var robot = {move:new Point(0,0),rotation:0,pos:new Point(1,1), angle:startAngle, bodyRadius:0.1, radarRadius:0.3};
+        var startAngle = 0 + Math.PI / 4;
 
-var collisions = [];
-function draw(){
-	var scale = 50;
-	var offsetX = 10;
-	var offsetY = 10;
+        var robot = {
+            move: new Point(0, 0),
+            rotation: 0,
+            pos: new Point(1, 1),
+            angle: startAngle,
+            bodyRadius: 0.1,
+            radarRadius: 0.3
+        };
 
-	var c = document.getElementById("myCanvas");
-	var ctx = c.getContext("2d");
+        var collisions = [];
 
-	//clear the image
-	//ctx.clearRect(0, 0, c.width, c.height);
-	
-	//draw the rooms
-	rooms.forEach(function(room, index, array) {
+        function draw() {
+            var scale = 50;
+            var offsetX = 10;
+            var offsetY = 10;
 
-		ctx.beginPath();
-		ctx.lineWidth="1";
-		ctx.strokeStyle="black"; // Wall
+            var c = document.getElementById("myCanvas");
+            var ctx = c.getContext("2d");
 
-		//jump to initial point
-		ctx.moveTo(room[0].x*scale+offsetX, room[0].y*scale+offsetY);
+            //clear the image
+            //ctx.clearRect(0, 0, c.width, c.height);
 
-		//draw each point. index 0 could be avoided at the beninginng since we are already there. Hope JS is smart and does not fuck up
-		room.forEach(function(item, index, array) {
-			ctx.lineTo(item.x*scale+offsetX,item.y*scale+offsetY);
-		});
+            //draw the rooms
+            rooms.forEach(function(room, index, array) {
 
-		//close the figure
-		ctx.lineTo(room[0].x*scale+offsetX, room[0].y*scale+offsetY);
+                ctx.beginPath();
+                ctx.lineWidth = "1";
+                ctx.strokeStyle = "black"; // Wall
 
-		ctx.stroke(); // Draw it
-	});
+                //jump to initial point
+                ctx.moveTo(room[0].x * scale + offsetX, room[0].y * scale + offsetY);
 
-	//draw the robot
-	ctx.beginPath();
-	ctx.strokeStyle = "Red";
-	ctx.fillStyle = "Red";
-	ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.bodyRadius*scale,0,2*Math.PI);
-	ctx.fill();
-	
-	//draw a line that show the "head" of the bot
-	ctx.beginPath();
-	ctx.strokeStyle = "Blue";
-	ctx.lineWidth=0.1*scale;
-	ctx.moveTo(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY);
-	var hX = (robot.pos.x + Math.sin(robot.angle)*robot.bodyRadius) *scale+offsetY;
-	var hY = (robot.pos.y + Math.cos(robot.angle)*robot.bodyRadius) *scale+offsetY;
-	ctx.lineTo(hX, hY);
-	ctx.stroke();
-	/*
-	//draw the radar
-	ctx.beginPath();
-	ctx.strokeStyle = "Blue";
-	ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.radarRadius*scale,0,2*Math.PI);
-	ctx.stroke();
-	*/
-	collisions.forEach(function(collision, index, array) {
-		//draw the collision
-		ctx.beginPath();
-		ctx.fillStyle = "Green";
-		ctx.lineWidth="1";
-		ctx.arc(collision.x*scale+offsetX,collision.y*scale+offsetY,2,0,2*Math.PI);
-		ctx.fill();
-	});
-}
+                //draw each point. index 0 could be avoided at the beninginng since we are already there. Hope JS is smart and does not fuck up
+                room.forEach(function(item, index, array) {
+                    ctx.lineTo(item.x * scale + offsetX, item.y * scale + offsetY);
+                });
 
+                //close the figure
+                ctx.lineTo(room[0].x * scale + offsetX, room[0].y * scale + offsetY);
 
+                ctx.stroke(); // Draw it
+            });
 
+            //draw the robot
+            ctx.beginPath();
+            ctx.strokeStyle = "Red";
+            ctx.fillStyle = "Red";
+            ctx.arc(robot.pos.x * scale + offsetX, robot.pos.y * scale + offsetY, robot.bodyRadius * scale, 0, 2 * Math.PI);
+            ctx.fill();
 
-var bodyCollision = false;
-window.setInterval(loop, 10);
-//loop();
-function loop(){
-	//console.log("loop");
-	
-	robot.pos.x+=robot.move.x;
-	robot.pos.y+=robot.move.y;
-	robot.angle+=robot.rotation;
-	
-	bodyCollision = false;
-	collisions = [];
-	findCollision(robot)
-	draw();
-
-	robot.move.x = robot.move.y = robot.rotation = 0;
-	doAI();
-}
-var cooldown = 0;
-function doAI(){
-	//USER CODE!
-	robot.move.x = Math.sin(robot.angle)*(0.09);
-	robot.move.y = Math.cos(robot.angle)*(0.09);
-	if (cooldown)
-		cooldown--;
-	if (bodyCollision && cooldown <= 0){
-		//cooldown = 10;
-		
-		if (Math.random() >0.5){
-			console.log("collision, rotating left");
-			robot.rotation = Math.random() * Math.PI; //0..180 deg
-		}else{
-			console.log("collision, rotating right");
-			robot.rotation = -Math.random() * Math.PI; //0..-180 deg
-		}
-	}
-}
-
-function findCollision(robot){
-	rooms.forEach(function(room, index, array) {
-		//console.log("ROOM "+index);
-		var i;
-		for (i = 0; i < room.length-1; i++){
-			p = findTangentPoint(robot.pos.x, robot.pos.y, room[i].x, room[i].y, room[i+1].x, room[i+1].y);
-			//console.log("Tangent point is " +p.x+","+p.y);
-			collide(robot, p);
-		}
-		p = findTangentPoint(robot.pos.x, robot.pos.y, room[i].x, room[i].y, room[0].x, room[0].y);
-		
-		collide(robot, p);
-	});
-}
-
-function distance(a, b){
-	return Math.sqrt( (a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) );
-}
-
-function collide(robot, point){
-	
-	var rangeBody = 2, rangeRadar = 5;
-	var dist = distance(robot.pos, point);
-	//console.log("distance " +dist);
-	if (dist <= robot.radarRadius ){
-		//i see you
-		//console.log("i see something");
-		collisions.push(point);
-		if (dist <= robot.bodyRadius ){
-			//i touch you
-			bodyCollision = true;
-			console.log("i touch something");
-			collisions.push(point);
-			if (dist < robot.bodyRadius ){
-				//i'm inside the wall! take me out of there!
-				//we just move back the robot
-				robot.pos.x -= robot.move.x;
-				robot.pos.y -= robot.move.y;
-				
-				//ALTERNATIVE2 : just dont move
-				robot.move.x = 0;
-				robot.move.y = 0;
-				//ALTERNAIVE1: try to scale back movement vector
-				/*
-				var distanceMoved = distance( robot.move, new Point(0,0) );
-				var distancePossibleToMove = distanceMoved - (robot.bodyRadius - dist);
-				distancePossibleToMove = Math.abs(distancePossibleToMove);
-				robot.move.x = (robot.move.x/distanceMoved)*distancePossibleToMove;
-				robot.move.y = (robot.move.y/distanceMoved)*distancePossibleToMove;
-				
-				robot.pos.x += robot.move.x;
-				robot.pos.y += robot.move.y;
-				*/
-				//now i HOPE it does not collide animore. May NOT be tha case in case of corner; in that case i don't know what to do. sorry
-			}
-		}
-	}
-}
-
-function constrain(val, min, max){
-	if (min > max){
-		return constrain(val, max, min);
-	}
-
-	if (val < min)
-		return min;
-		
-	if (val > max)
-		return max;
-	
-	return val;
-}
-
-function findTangentPoint(xR, yR, xW1, yW1, xW2, yW2 ){
-	if ( xW1 == xW2 ){
-		//console.log("same x " +yR +" "+ yW1+" "+ yW2);
-		return new Point(xW1, constrain(yR, yW1, yW2) );
-	}
-	
-	if ( yW1 == yW2 ){
-		//console.log("same y " +xR +" "+ xW1+" "+ xW2);
-		return new Point(constrain(xR, xW1, xW2), yW1);
-	}
-
-	mW = (yW1 - yW2) / (-xW1 + xW2);
-	qW = -mW * xW1 + yW1;
-	console.log("Equation of the wall is y=" +mW+"x+"+qW);
-	
-	if ( isFinite(mW) ){
-		mI = 0;
-	}
-
-	//first we find the m and q of the line tangent to the wall passing by the center of the robot
-	var mI = -1/mW;
-	
-	var qI = mI*xR-yR
-	
-	console.log("tangent line " +mI+" "+qI);
-	
-	//now we find the point where the tangent line and the wall line intersect
-	var x = (-qW+qI)/(mW-mI);
-	var y = mW * x + qW;
-	
-	//DEBUG: doublecheck
-	var yDebug = mI * x + qI;
-	if (yDebug != y){
-		console.log("ERROR: tangent point is wrong! " +x+" "+y+" "+yDebug);
-	}
-	return new Point(x,y);
-}
+            //draw a line that show the "head" of the bot
+            ctx.beginPath();
+            ctx.strokeStyle = "Blue";
+            ctx.lineWidth = 0.1 * scale;
+            ctx.moveTo(robot.pos.x * scale + offsetX, robot.pos.y * scale + offsetY);
+            var hX = (robot.pos.x + Math.sin(robot.angle) * robot.bodyRadius) * scale + offsetY;
+            var hY = (robot.pos.y + Math.cos(robot.angle) * robot.bodyRadius) * scale + offsetY;
+            ctx.lineTo(hX, hY);
+            ctx.stroke();
+            /*
+            //draw the radar
+            ctx.beginPath();
+            ctx.strokeStyle = "Blue";
+            ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.radarRadius*scale,0,2*Math.PI);
+            ctx.stroke();
+            */
+            collisions.forEach(function(collision, index, array) {
+                //draw the collision
+                ctx.beginPath();
+                ctx.fillStyle = "Green";
+                ctx.lineWidth = "1";
+                ctx.arc(collision.x * scale + offsetX, collision.y * scale + offsetY, 2, 0, 2 * Math.PI);
+                ctx.fill();
+            });
+        }
 
 
-function cleanRoom(room){
-  // now we try to be smartass
-  var c = document.getElementById("myCanvas");
-  var ctx = c.getContext("2d");
 
-  //get the first wall and make it into a line
-  //y = mx + q
-  var x1 = room[0].x;
-  var x2 = room[1].x;
-  
-  var y1 = room[0].y;
-  var y2 = room[1].y;
-  
-  console.log("x1 "+x1+" y1 "+y1);
-  console.log("x2 "+x2+" y2 "+y2);
-  
-  var correctionM = 0;
-  var correctionQ = 0;
-  
-  if (x1 != x2){
-	var deltaX = x1-x2; 
-	var deltaY = y1-y2;
 
-	var m = deltaY / deltaX; 
-	
-	correctionM = m;
-  }
-  
-  correctionQ = y1 - x1 * correctionM;
-  
-  console.log("correctionM "+correctionM+" correctionQ "+correctionQ);
-  //need to find higest Y
-  for (var i = 0; i > -6; i--){
-	ctx.beginPath();
-	ctx.lineWidth="4";
-	ctx.strokeStyle="red"; // path
-  
-	var targetX1 = x1;
-	var targetY1 = correctionM * x1 + correctionQ + i;
-	
-	console.log("tx1 "+targetX1+" ty1 "+targetY1);
-	
-	ctx.moveTo(targetX1 * scale+offsetX, targetY1 * scale+offsetY);
-	
-	var targetX2 = x2;
-	var targetY2 = correctionM * x2 + correctionQ + i;
-	
-	console.log("tx2 "+targetX2+" ty2 "+targetY2);
-	
-	ctx.lineTo(targetX2 * scale+offsetX, targetY2 * scale+offsetY);
+        var bodyCollision = false;
+        loop();
+        function loop() {
+            //console.log("loop");
 
-	ctx.stroke(); // Draw it
-  }
-  
-}
+            robot.pos.x += robot.move.x;
+            robot.pos.y += robot.move.y;
+            robot.angle += robot.rotation;
 
-</script>
+            bodyCollision = false;
+            collisions = [];
+            findCollision(robot)
+            draw();
+
+            robot.move.x = robot.move.y = robot.rotation = 0;
+            doAI();
+            window.requestAnimationFrame(loop);
+
+        }
+        var cooldown = 0;
+
+        function doAI() {
+            //USER CODE!
+            robot.move.x = Math.sin(robot.angle) * (0.09);
+            robot.move.y = Math.cos(robot.angle) * (0.09);
+            if (cooldown)
+                cooldown--;
+            if (bodyCollision && cooldown <= 0) {
+                //cooldown = 10;
+
+                if (Math.random() > 0.5) {
+                    console.log("collision, rotating left");
+                    robot.rotation = Math.random() * Math.PI; //0..180 deg
+                } else {
+                    console.log("collision, rotating right");
+                    robot.rotation = -Math.random() * Math.PI; //0..-180 deg
+                }
+            }
+        }
+
+        function findCollision(robot) {
+            rooms.forEach(function(room, index, array) {
+                //console.log("ROOM "+index);
+                var i;
+                for (i = 0; i < room.length - 1; i++) {
+                    p = findTangentPoint(robot.pos.x, robot.pos.y, room[i].x, room[i].y, room[i + 1].x, room[i + 1].y);
+                    //console.log("Tangent point is " +p.x+","+p.y);
+                    collide(robot, p);
+                }
+                p = findTangentPoint(robot.pos.x, robot.pos.y, room[i].x, room[i].y, room[0].x, room[0].y);
+
+                collide(robot, p);
+            });
+        }
+
+        function distance(a, b) {
+            return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
+        }
+
+        function collide(robot, point) {
+
+            var rangeBody = 2,
+                rangeRadar = 5;
+            var dist = distance(robot.pos, point);
+            //console.log("distance " +dist);
+            if (dist <= robot.radarRadius) {
+                //i see you
+                //console.log("i see something");
+                collisions.push(point);
+                if (dist <= robot.bodyRadius) {
+                    //i touch you
+                    bodyCollision = true;
+                    console.log("i touch something");
+                    collisions.push(point);
+                    if (dist < robot.bodyRadius) {
+                        //i'm inside the wall! take me out of there!
+                        //we just move back the robot
+                        robot.pos.x -= robot.move.x;
+                        robot.pos.y -= robot.move.y;
+
+                        //ALTERNATIVE2 : just dont move
+                        robot.move.x = 0;
+                        robot.move.y = 0;
+                        //ALTERNAIVE1: try to scale back movement vector
+                        /*
+                        var distanceMoved = distance( robot.move, new Point(0,0) );
+                        var distancePossibleToMove = distanceMoved - (robot.bodyRadius - dist);
+                        distancePossibleToMove = Math.abs(distancePossibleToMove);
+                        robot.move.x = (robot.move.x/distanceMoved)*distancePossibleToMove;
+                        robot.move.y = (robot.move.y/distanceMoved)*distancePossibleToMove;
+
+                        robot.pos.x += robot.move.x;
+                        robot.pos.y += robot.move.y;
+                        */
+                        //now i HOPE it does not collide animore. May NOT be tha case in case of corner; in that case i don't know what to do. sorry
+                    }
+                }
+            }
+        }
+
+        function constrain(val, min, max) {
+            if (min > max) {
+                return constrain(val, max, min);
+            }
+
+            if (val < min)
+                return min;
+
+            if (val > max)
+                return max;
+
+            return val;
+        }
+
+        function findTangentPoint(xR, yR, xW1, yW1, xW2, yW2) {
+            if (xW1 == xW2) {
+                //console.log("same x " +yR +" "+ yW1+" "+ yW2);
+                return new Point(xW1, constrain(yR, yW1, yW2));
+            }
+
+            if (yW1 == yW2) {
+                //console.log("same y " +xR +" "+ xW1+" "+ xW2);
+                return new Point(constrain(xR, xW1, xW2), yW1);
+            }
+
+            mW = (yW1 - yW2) / (-xW1 + xW2);
+            qW = -mW * xW1 + yW1;
+            console.log("Equation of the wall is y=" + mW + "x+" + qW);
+
+            if (isFinite(mW)) {
+                mI = 0;
+            }
+
+            //first we find the m and q of the line tangent to the wall passing by the center of the robot
+            var mI = -1 / mW;
+
+            var qI = mI * xR - yR
+
+            console.log("tangent line " + mI + " " + qI);
+
+            //now we find the point where the tangent line and the wall line intersect
+            var x = (-qW + qI) / (mW - mI);
+            var y = mW * x + qW;
+
+            //DEBUG: doublecheck
+            var yDebug = mI * x + qI;
+            if (yDebug != y) {
+                console.log("ERROR: tangent point is wrong! " + x + " " + y + " " + yDebug);
+            }
+            return new Point(x, y);
+        }
+
+
+        function cleanRoom(room) {
+            // now we try to be smartass
+            var c = document.getElementById("myCanvas");
+            var ctx = c.getContext("2d");
+
+            //get the first wall and make it into a line
+            //y = mx + q
+            var x1 = room[0].x;
+            var x2 = room[1].x;
+
+            var y1 = room[0].y;
+            var y2 = room[1].y;
+
+            console.log("x1 " + x1 + " y1 " + y1);
+            console.log("x2 " + x2 + " y2 " + y2);
+
+            var correctionM = 0;
+            var correctionQ = 0;
+
+            if (x1 != x2) {
+                var deltaX = x1 - x2;
+                var deltaY = y1 - y2;
+
+                var m = deltaY / deltaX;
+
+                correctionM = m;
+            }
+
+            correctionQ = y1 - x1 * correctionM;
+
+            console.log("correctionM " + correctionM + " correctionQ " + correctionQ);
+            //need to find higest Y
+            for (var i = 0; i > -6; i--) {
+                ctx.beginPath();
+                ctx.lineWidth = "4";
+                ctx.strokeStyle = "red"; // path
+
+                var targetX1 = x1;
+                var targetY1 = correctionM * x1 + correctionQ + i;
+
+                console.log("tx1 " + targetX1 + " ty1 " + targetY1);
+
+                ctx.moveTo(targetX1 * scale + offsetX, targetY1 * scale + offsetY);
+
+                var targetX2 = x2;
+                var targetY2 = correctionM * x2 + correctionQ + i;
+
+                console.log("tx2 " + targetX2 + " ty2 " + targetY2);
+
+                ctx.lineTo(targetX2 * scale + offsetX, targetY2 * scale + offsetY);
+
+                ctx.stroke(); // Draw it
+            }
+
+        }
+    </script>
 
 </body>
+
 </html>
