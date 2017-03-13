@@ -9,22 +9,84 @@
 
 <script>
 
+var start;
+var cleanM, clearQ;
+var status = 0;
+var target = 0;
 function doAI(){
 	//USER CODE!
 	
-	if (bodyCollision){
-		//robot.rotation = Math.PI; //turn the other way
-		//cooldown = 10;
-		
-		if (Math.random() >0.5){
-			console.log("collision, rotating left");
-			robot.rotation = Math.random() * Math.PI; //0..180 deg
-		}else{
-			console.log("collision, rotating right");
-			robot.rotation = -Math.random() * Math.PI/4; //0..-180 deg
-		}
-		
+	//be sure to have a starting point
+	if (start == undefined){
+		start = new Point(robot.pos.x, robot.pos.y);
 	}
+	
+	if (bodyCollision){
+		if ( cleanM == undefined ){
+			var distFromStart = distance(start, robot.pos);
+			console.log("distFromStart  "+distFromStart);
+			//be sure we travel far enought
+			if ( cleanM == undefined && distFromStart > robot.bodyRadius ){
+				cleanM = (start.y - robot.pos.y) / (start.x - robot.pos.x);
+				cleanQ = start.y - (cleanM * start.x);
+				console.log("found line to follow "+cleanM + " "+cleanQ);
+				status = 2;
+			}else{
+				robot.rotation = Math.random() * Math.PI * 2 - Math.PI; //-180..180 deg
+				console.log("collision too near, random rotation: "+robot.rotation);
+			}
+		}
+		if ( !isFinite(cleanM) ){ //cleanM is infinite: our base line was horizontal
+			//line is vertical
+			switch (+status){
+				case 1: //we was going up, go right
+					robot.rotation = Math.PI / 2; //turn right
+					target = robot.pos.x-robot.bodyRadius;
+					status = 3;
+					console.log("case 1 end target "+target);
+					break;
+				case 2: //we was going down, go left
+					target = robot.pos.x-robot.bodyRadius;
+					robot.rotation = -Math.PI / 2; //turn right
+					status = 4;
+					console.log("case 2 end target "+target);
+					break;
+				case 3: //we was going right, go down
+					robot.rotation = Math.PI / 2; //turn 
+					status = 2;
+					console.log("case 3 special end");
+					break;
+				case 4: //we was going left, go up
+					robot.rotation = -Math.PI / 2; //turn right
+					status = 1;
+					console.log("case 4 special end");
+					break;
+				default:
+					console.log("unknow status -"+status+"-");
+			}
+			console.log("giong to rotate: "+robot.rotation + " "+status);
+		}else{
+			console.log("no implemented");
+		}
+	}
+	
+	switch (+status){
+		case 3:
+			if (robot.pos.x < target){
+				robot.rotation = Math.PI / 2; //turn left
+				status = 2;
+				console.log("case 3 end");
+			}
+			break;
+		case 4:
+			if (robot.pos.x < target){
+				robot.rotation = -Math.PI / 2; //turn right
+				status = 1;
+				console.log("case 4 end");
+			}
+			break;
+	}
+	
 	robot.move.x = Math.sin(robot.angle+robot.rotation)*(0.06);
 	robot.move.y = Math.cos(robot.angle+robot.rotation)*(0.06);
 }
@@ -51,12 +113,6 @@ function RobotSensor() {
 function RobotAction() {
   this.speed = 0;
   this.rotation = 0;
-}
-
-//main loop
-function loop() {
-	//set sensor data
-	
 }
 
 function Point(x, y) {
@@ -105,11 +161,22 @@ var rooms = [
   ]
 ];
 
-var startAngle = 0 + Math.PI/4 ;
+var startAngle = 0;
 
-var robot = {move:new Point(0,0),rotation:0,pos:new Point(12,12), angle:startAngle, bodyRadius:0.1, radarRadius:0.3};
+var robot = {
+	move:new Point(0,0),
+	rotation:0,
+	pos:new Point(12,12),
+	angle:startAngle,
+	bodyRadius:0.1,
+	radarRadius:0.3
+};
 
 var collisions = [];
+
+reset();
+
+window.setInterval(loop, 10);
 
 function resetLayer1(){
 	var scale = 50;
@@ -178,13 +245,14 @@ function drawLayer2(){
 	var hY = (robot.pos.y + Math.cos(robot.angle)*robot.bodyRadius) *scale+offsetY;
 	ctx.lineTo(hX, hY);
 	ctx.stroke();
-	/*
+	
 	//draw the radar
 	ctx.beginPath();
 	ctx.strokeStyle = "Blue";
+	ctx.lineWidth=0.01 * scale;
 	ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.radarRadius*scale,0,2*Math.PI);
 	ctx.stroke();
-	*/
+	
 	collisions.forEach(function(collision, index, array) {
 		//draw the collision
 		ctx.beginPath();
@@ -195,11 +263,13 @@ function drawLayer2(){
 	});
 }
 
-resetLayer1();
+function reset(){
+	resetLayer1();
+	robot = {move:new Point(0,0),rotation:0,pos:new Point(12,12), angle:startAngle, bodyRadius:0.1, radarRadius:0.3};
+	var bodyCollision = false;
+	collisions = [];
+}
 
-
-var bodyCollision = false;
-window.setInterval(loop, 10);
 //loop();
 function loop(){
 	//console.log("loop");
