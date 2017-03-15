@@ -220,8 +220,7 @@ function drawLayer1(){
 	
 	//draw the robot path
 	ctx.beginPath();
-	ctx.strokeStyle = "Red";
-	ctx.fillStyle = "Red";
+	ctx.fillStyle = "rgba(255, 0, 0, 0.2)";
 	ctx.arc(robot.pos.x*scale+offsetX,robot.pos.y*scale+offsetY,robot.bodyRadius*scale,0,2*Math.PI);
 	ctx.fill();
 }
