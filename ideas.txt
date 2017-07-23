@@ -1,0 +1,1 @@
+- use VL53L1 or similar as cheap and accurate distance sensor
