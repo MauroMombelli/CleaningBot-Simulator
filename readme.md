@@ -1,4 +1,6 @@
-This is a 2d simulation evironment for a simple rover.
+**This is a 2d simulation evironment for a simple rover.**
+
+***test it!*** http://mauromombelli.com/CleaningBot-Simulator/
 
 The idea is to simulate a simple room, and the sensors from the rover, and let the users experiment implementing their own AI;
 the simulation can be used to test AI behaviur.
